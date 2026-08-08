@@ -66,9 +66,16 @@ export interface InterviewQuestion {
   evidenceSought: string
 }
 
+export type EvidenceStatus = 'pending' | 'captured'
+
 export interface EvidenceLogEntry {
   questionId: string
   competency: string
   meta: string
-  status: 'pending' | 'captured'
+  focusArea: FocusArea
+  prompt: string
+  evidenceSought: string
+  response: string
+  status: EvidenceStatus
+  capturedAt: string | null
 }

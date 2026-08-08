@@ -1,13 +1,38 @@
 import { QUESTION_COUNT_RANGE } from '../data/interviewSetup'
-import type { CandidateSetupPayload } from '../types/interview'
+import type { CandidateSetupPayload, EvidenceLogEntry } from '../types/interview'
 
 const STORAGE_KEY = 'intervuex.candidateSetup'
+const EVIDENCE_STORAGE_KEY = 'intervuex.evidenceLog'
 
 export function saveCandidateSetup(payload: CandidateSetupPayload): void {
   try {
     sessionStorage.setItem(STORAGE_KEY, JSON.stringify(payload))
+    // A new session invalidates evidence captured under a previous candidate/setup.
+    sessionStorage.removeItem(EVIDENCE_STORAGE_KEY)
   } catch {
     // sessionStorage may be unavailable (e.g. private browsing) — non-fatal for this step.
+  }
+}
+
+/**
+ * Persists the in-progress interview's evidence log so the Evidence System
+ * (a separate route from the Interview Workspace) can read captured records
+ * after the workspace unmounts.
+ */
+export function saveEvidenceLog(entries: EvidenceLogEntry[]): void {
+  try {
+    sessionStorage.setItem(EVIDENCE_STORAGE_KEY, JSON.stringify(entries))
+  } catch {
+    // sessionStorage may be unavailable — evidence simply won't persist across routes.
+  }
+}
+
+export function readEvidenceLog(): EvidenceLogEntry[] {
+  try {
+    const raw = sessionStorage.getItem(EVIDENCE_STORAGE_KEY)
+    return raw ? (JSON.parse(raw) as EvidenceLogEntry[]) : []
+  } catch {
+    return []
   }
 }
 

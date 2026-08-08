@@ -1,6 +1,6 @@
 import { useEffect, useMemo, useRef, useState } from 'react'
 import { buildInterviewQueue } from '../lib/buildInterviewQueue'
-import { getCandidateSetupOrDefault } from '../lib/interviewSession'
+import { getCandidateSetupOrDefault, saveEvidenceLog } from '../lib/interviewSession'
 import type { EvidenceLogEntry, InterviewPhase } from '../types/interview'
 
 const EVALUATING_DELAY_MS = 900
@@ -32,6 +32,12 @@ export function useInterviewSession() {
 
   const currentQuestion = questions[questionIndex] ?? null
 
+  // The Evidence System reads this from sessionStorage on its own route, so the
+  // live log is mirrored there any time it changes.
+  useEffect(() => {
+    saveEvidenceLog(evidenceLog)
+  }, [evidenceLog])
+
   function handleResponseChange(value: string) {
     setResponse(value)
     if (responseError) {
@@ -53,6 +59,7 @@ export function useInterviewSession() {
     }
 
     const questionId = currentQuestion.id
+    const submittedResponse = response.trim()
     setPhase('evaluating')
     setEvidenceLog((prev) => [
       ...prev,
@@ -60,7 +67,12 @@ export function useInterviewSession() {
         questionId,
         competency: currentQuestion.competency,
         meta: currentQuestion.meta,
+        focusArea: currentQuestion.focusArea,
+        prompt: currentQuestion.prompt,
+        evidenceSought: currentQuestion.evidenceSought,
+        response: submittedResponse,
         status: 'pending',
+        capturedAt: null,
       },
     ])
 
@@ -68,7 +80,9 @@ export function useInterviewSession() {
       setPhase('adapting')
       setEvidenceLog((prev) =>
         prev.map((entry) =>
-          entry.questionId === questionId ? { ...entry, status: 'captured' } : entry,
+          entry.questionId === questionId
+            ? { ...entry, status: 'captured', capturedAt: new Date().toISOString() }
+            : entry,
         ),
       )
 

@@ -68,13 +68,21 @@ export default function InterviewWorkspacePage() {
                 {capturedCount} evidence signal{capturedCount === 1 ? '' : 's'} captured across
                 this session.
               </p>
-              <Link
-                className="mt-5 inline-flex items-center gap-2 rounded-md bg-accent-primary px-4 py-2 text-sm font-semibold text-bg-base transition-colors hover:bg-accent-primary-hover"
-                to={ROUTES.RESULTS}
-              >
-                View Results
-                <ArrowRight aria-hidden="true" className="h-4 w-4" />
-              </Link>
+              <div className="mt-5 flex flex-col items-center justify-center gap-3 sm:flex-row">
+                <Link
+                  className="inline-flex items-center gap-2 rounded-md border border-border-default px-4 py-2 text-sm font-semibold text-text-primary transition-colors hover:bg-surface-default"
+                  to={ROUTES.EVIDENCE}
+                >
+                  View Evidence Log
+                </Link>
+                <Link
+                  className="inline-flex items-center gap-2 rounded-md bg-accent-primary px-4 py-2 text-sm font-semibold text-bg-base transition-colors hover:bg-accent-primary-hover"
+                  to={ROUTES.RESULTS}
+                >
+                  View Results
+                  <ArrowRight aria-hidden="true" className="h-4 w-4" />
+                </Link>
+              </div>
             </section>
           ) : (
             <>
