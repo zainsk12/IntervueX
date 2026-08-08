@@ -7,6 +7,7 @@ import { FocusAreaGrid } from '../components/interview-setup/FocusAreaGrid'
 import { FormField } from '../components/interview-setup/FormField'
 import { fieldInputClassName, fieldInputErrorClassName } from '../components/interview-setup/inputStyles'
 import { ResumeInput } from '../components/interview-setup/ResumeInput'
+import { SectionLabel } from '../components/SectionLabel'
 import {
   DEPTH_LEVELS,
   DIFFICULTY_LEVELS,
@@ -23,14 +24,6 @@ import type {
   InterviewConfiguration,
   InterviewContext,
 } from '../types/interview'
-
-function SectionLabel({ children }: { children: ReactNode }) {
-  return (
-    <p className="font-mono text-[11px] uppercase tracking-[0.16em] text-accent-secondary">
-      {children}
-    </p>
-  )
-}
 
 function SectionCard({
   title,

@@ -113,7 +113,10 @@ Do not automatically use purple or blue simply because IntervueX is an AI produc
 
 # 5. Color System
 
-Dark mode is the primary visual mode.
+Dark mode is the primary visual mode. The values below are implemented as CSS custom properties
+in `frontend/src/index.css` and consumed throughout the frontend via Tailwind utility classes
+(e.g. `bg-bg-base`, `text-text-secondary`, `border-border-default`) — there are no ad hoc hex
+values in components.
 
 ## Backgrounds
 
@@ -122,3 +125,78 @@ Dark mode is the primary visual mode.
 --bg-subtle:   #10141C
 --bg-elevated: #161B26
 --bg-inset:    #0A0D12
+```
+
+## Surfaces
+
+```text
+--surface-default: #1A2030
+--surface-raised:  #222A3A
+--surface-muted:   #141922
+```
+
+## Primary — Evidence
+
+```text
+--accent-primary:       #C9A84C
+--accent-primary-hover: #B8943F
+```
+
+## Secondary — System Intelligence
+
+```text
+--accent-secondary:       #5B8A8A
+--accent-secondary-hover: #4A7575
+```
+
+## Semantic
+
+```text
+--success: #3DAB6E
+--warning: #D4940A
+--error:   #D64545
+```
+
+## Text
+
+```text
+--text-primary:   #E8EDF5
+--text-secondary: #8B95A8
+--text-tertiary:  #5C6578
+```
+
+## Borders
+
+```text
+--border-default: #2A3344
+--border-strong:  #3A4558
+--border-subtle:  #1E2636
+```
+
+---
+
+# 6. Typography
+
+```text
+--font-sans: "Instrument Sans", "DM Sans", system-ui, sans-serif
+--font-mono: "JetBrains Mono", monospace
+```
+
+`font-sans` is used for all body copy and headings. `font-mono` is reserved for structural /
+system-state text — eyebrow labels, metadata, and evidence-chamber readouts — to reinforce the
+"technical examination environment" feel described in Section 3, not for general prose.
+
+---
+
+# 7. Radius & Spacing
+
+```text
+--radius-sm: 4px
+--radius-md: 8px
+--radius-lg: 12px
+--radius-xl: 16px
+```
+
+Spacing follows Tailwind's default scale, extended with a few larger steps (`18`, `22`, `26`) for
+generous section padding on the Landing page. Components should reuse these tokens rather than
+introducing new radius or spacing values.

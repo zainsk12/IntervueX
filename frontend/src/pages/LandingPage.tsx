@@ -3,6 +3,7 @@ import { motion, useReducedMotion } from 'framer-motion'
 import { ArrowRight, ChevronRight } from 'lucide-react'
 import { Link } from 'react-router-dom'
 import { EvidenceChamberVisual } from '../components/landing/EvidenceChamberVisual'
+import { SectionLabel } from '../components/SectionLabel'
 import {
   ADAPTIVE_STEPS,
   DIFFERENTIATION_POINTS,
@@ -50,14 +51,6 @@ function SecondaryButton({
     >
       {children}
     </button>
-  )
-}
-
-function SectionLabel({ children }: { children: ReactNode }) {
-  return (
-    <p className="font-mono text-[11px] uppercase tracking-[0.16em] text-accent-secondary">
-      {children}
-    </p>
   )
 }
 

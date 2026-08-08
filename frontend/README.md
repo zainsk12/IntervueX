@@ -1,75 +1,54 @@
-# React + TypeScript + Vite
+# IntervueX — Frontend
 
-This template provides a minimal setup to get React working in Vite with HMR and some ESLint rules.
+React + TypeScript + Vite frontend for IntervueX, an adaptive technical interview platform. See
+the repository-root `README.md` for overall project context and `../docs/FRONTEND_DESIGN_SPEC.md`
+for the visual design system ("Evidence Chamber").
 
-Currently, two official plugins are available:
+## Scripts
 
-- [@vitejs/plugin-react](https://github.com/vitejs/vite-plugin-react/blob/main/packages/plugin-react) uses [Oxc](https://oxc.rs)
-- [@vitejs/plugin-react-swc](https://github.com/vitejs/vite-plugin-react/blob/main/packages/plugin-react-swc) uses [SWC](https://swc.rs/)
-
-## React Compiler
-
-The React Compiler is not enabled on this template because of its impact on dev & build performances. To add it, see [this documentation](https://react.dev/learn/react-compiler/installation).
-
-## Expanding the ESLint configuration
-
-If you are developing a production application, we recommend updating the configuration to enable type-aware lint rules:
-
-```js
-export default defineConfig([
-  globalIgnores(['dist']),
-  {
-    files: ['**/*.{ts,tsx}'],
-    extends: [
-      // Other configs...
-
-      // Remove tseslint.configs.recommended and replace with this
-      tseslint.configs.recommendedTypeChecked,
-      // Alternatively, use this for stricter rules
-      tseslint.configs.strictTypeChecked,
-      // Optionally, add this for stylistic rules
-      tseslint.configs.stylisticTypeChecked,
-
-      // Other configs...
-    ],
-    languageOptions: {
-      parserOptions: {
-        project: ['./tsconfig.node.json', './tsconfig.app.json'],
-        tsconfigRootDir: import.meta.dirname,
-      },
-      // other options...
-    },
-  },
-])
-
+```bash
+npm install       # install dependencies
+npm run dev        # start the Vite dev server
+npm run build       # type-check (tsc -b) and produce a production build in dist/
+npm run lint        # run ESLint
+npm run preview      # preview the production build locally
 ```
 
-You can also install [eslint-plugin-react-x](https://github.com/Rel1cx/eslint-react/tree/main/packages/plugins/eslint-plugin-react-x) and [eslint-plugin-react-dom](https://github.com/Rel1cx/eslint-react/tree/main/packages/plugins/eslint-plugin-react-dom) for React-specific lint rules:
+## Routes
 
-```js
-// eslint.config.js
-import reactX from 'eslint-plugin-react-x'
-import reactDom from 'eslint-plugin-react-dom'
+| Path                     | Page                     | Purpose                                             |
+| ------------------------ | ------------------------ | ---------------------------------------------------- |
+| `/`                        | Landing Page               | Product entry point and interview initiation.         |
+| `/interview/setup`          | Candidate Setup             | Candidate profile, role context, and session config.  |
+| `/interview`                | Interview Workspace          | The adaptive interview itself (question → response → evidence). |
+| `/results`                 | Results / Assessment          | Evidence-backed assessment summary.                   |
+| `/evidence`, `/evidence/:evidenceId` | Evidence System | Full evidence log and individual evidence records.      |
 
-export default defineConfig([
-  globalIgnores(['dist']),
-  {
-    files: ['**/*.{ts,tsx}'],
-    extends: [
-      // Other configs...
-      // Enable lint rules for React
-      reactX.configs['recommended-typescript'],
-      // Enable lint rules for React DOM
-      reactDom.configs.recommended,
-    ],
-    languageOptions: {
-      parserOptions: {
-        project: ['./tsconfig.node.json', './tsconfig.app.json'],
-        tsconfigRootDir: import.meta.dirname,
-      },
-      // other options...
-    },
-  },
-])
+Route paths are centralized in `src/data/routes.ts` (`ROUTES`) — the app never hardcodes a path
+string elsewhere; all navigation goes through this constant.
 
-```
+## Architecture notes
+
+- **State & persistence:** there is no backend call in this build. Candidate setup and the
+  in-progress evidence log are held in React state and mirrored to `sessionStorage`
+  (`src/lib/interviewSession.ts`) so the Evidence System and Results pages — separate routes — can
+  read the current session after the Interview Workspace unmounts.
+- **Interview questions:** selected from a static local bank (`src/data/interviewQuestions.ts`) by
+  `src/lib/buildInterviewQueue.ts`, filtered by the candidate's chosen focus areas. This is a
+  deterministic, frontend-only stand-in for real adaptive question selection — see
+  `docs/technical-spec.md` for the intended backend contract.
+- **Assessment:** `src/lib/resultsAssessment.ts` derives an evidence-*coverage* summary (what was
+  captured vs. not) from the session's evidence log. There is no response-quality scoring model in
+  this frontend build — the Results page presents evidence for a human reviewer to interpret, not
+  a computed verdict.
+- **Design tokens:** all colors, spacing, and typography are defined as CSS variables in
+  `src/index.css` (`@theme`) and consumed via Tailwind utility classes — no ad hoc hex values in
+  components.
+- **Folder structure:** `pages/` holds one component per route; `components/` is organized by the
+  page/feature it belongs to (`interview/`, `interview-setup/`, `evidence/`, `results/`,
+  `landing/`), plus a small set of shared, cross-page components at the `components/` root (e.g.
+  `SectionLabel.tsx`).
+
+## Tech stack
+
+React 19, TypeScript, Vite, Tailwind CSS v4, React Router v7, Framer Motion, lucide-react.

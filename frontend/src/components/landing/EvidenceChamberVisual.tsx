@@ -24,7 +24,7 @@ export function EvidenceChamberVisual() {
   return (
     <section
       aria-label="Evidence chamber: candidate response evaluated into assessment"
-      className="overflow-hidden rounded-lg border border-border-default bg-bg-inset"
+      className="@container overflow-hidden rounded-lg border border-border-default bg-bg-inset"
     >
       <div className="flex items-center justify-between border-b border-border-subtle px-4 py-3 sm:px-5">
         <div className="flex items-center gap-3">
@@ -53,11 +53,11 @@ export function EvidenceChamberVisual() {
         </div>
       </div>
 
-      <div className="grid gap-px bg-border-subtle sm:grid-cols-5">
+      <div className="grid gap-px bg-border-subtle @sm:grid-cols-2 @4xl:grid-cols-5">
         {EVIDENCE_FLOW_STAGES.map((stage, index) => (
           <motion.div
             key={stage.id}
-            className={`relative flex flex-col p-4 sm:min-h-[168px] sm:p-3 lg:p-4 ${statusStyles[stage.status]}`}
+            className={`relative flex flex-col p-4 @sm:min-h-[168px] @sm:p-3 @4xl:p-4 ${statusStyles[stage.status]}`}
             initial={reduceMotion ? false : { opacity: 0, y: 8 }}
             transition={{ delay: index * 0.08, duration: 0.35 }}
             viewport={{ once: true, margin: '-40px' }}

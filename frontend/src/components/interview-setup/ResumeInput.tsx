@@ -20,7 +20,9 @@ export function ResumeInput({ id, fileName, onChange }: ResumeInputProps) {
         type="file"
       />
       <label
-        className="flex cursor-pointer items-center gap-2.5 rounded-md border border-dashed border-border-default bg-surface-default px-3 py-2.5 text-sm text-text-secondary transition-colors hover:border-border-strong hover:bg-surface-muted"
+        className={`flex cursor-pointer items-center gap-2.5 rounded-md border border-dashed border-border-default bg-surface-default px-3 py-2.5 text-sm text-text-secondary transition-colors hover:border-border-strong hover:bg-surface-muted ${
+          fileName ? 'pr-9' : ''
+        }`}
         htmlFor={id}
       >
         {fileName ? (
@@ -28,7 +30,7 @@ export function ResumeInput({ id, fileName, onChange }: ResumeInputProps) {
         ) : (
           <UploadCloud aria-hidden="true" className="h-4 w-4 shrink-0 text-text-tertiary" />
         )}
-        <span className={`truncate ${fileName ? 'text-text-primary' : ''}`}>
+        <span className={`min-w-0 flex-1 truncate ${fileName ? 'text-text-primary' : ''}`}>
           {fileName ?? 'Attach resume / CV (PDF, DOC, DOCX)'}
         </span>
       </label>

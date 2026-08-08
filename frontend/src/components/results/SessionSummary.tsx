@@ -1,4 +1,5 @@
 import { DEPTH_LEVELS, DIFFICULTY_LEVELS, INTERVIEW_TYPES } from '../../data/interviewSetup'
+import { formatDateTime } from '../../lib/formatDate'
 import { EvidenceRecordList } from '../evidence/EvidenceRecordList'
 import type { CandidateSetupPayload, EvidenceLogEntry } from '../../types/interview'
 
@@ -6,17 +7,6 @@ interface SessionSummaryProps {
   setup: CandidateSetupPayload
   evidenceLog: EvidenceLogEntry[]
   totalQuestions: number
-}
-
-function formatSubmittedAt(submittedAt: string): string {
-  try {
-    return new Date(submittedAt).toLocaleString(undefined, {
-      dateStyle: 'medium',
-      timeStyle: 'short',
-    })
-  } catch {
-    return submittedAt
-  }
 }
 
 export function SessionSummary({ setup, evidenceLog, totalQuestions }: SessionSummaryProps) {
@@ -70,7 +60,7 @@ export function SessionSummary({ setup, evidenceLog, totalQuestions }: SessionSu
             Session Started
           </dt>
           <dd className="mt-1 text-sm text-text-primary">
-            {formatSubmittedAt(setup.submittedAt)}
+            {formatDateTime(setup.submittedAt)}
           </dd>
         </div>
       </dl>

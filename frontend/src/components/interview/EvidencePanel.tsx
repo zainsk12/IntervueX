@@ -100,11 +100,13 @@ export function EvidencePanel({ setup, question, phase, evidenceLog }: EvidenceP
                 className="flex items-center justify-between gap-2 font-mono text-[10px]"
                 key={entry.questionId}
               >
-                <span className="truncate text-text-secondary">{entry.competency}</span>
+                <span className="min-w-0 flex-1 truncate text-text-secondary">
+                  {entry.competency}
+                </span>
                 <span
-                  className={
+                  className={`shrink-0 ${
                     entry.status === 'captured' ? 'text-accent-primary' : 'text-text-tertiary'
-                  }
+                  }`}
                 >
                   {entry.status === 'captured' ? 'CAPTURED' : 'PENDING'}
                 </span>

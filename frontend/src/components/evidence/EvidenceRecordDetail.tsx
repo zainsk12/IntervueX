@@ -1,4 +1,5 @@
 import { FOCUS_AREAS } from '../../data/interviewSetup'
+import { formatDateTime } from '../../lib/formatDate'
 import type { EvidenceLogEntry } from '../../types/interview'
 
 interface EvidenceRecordDetailProps {
@@ -6,18 +7,7 @@ interface EvidenceRecordDetailProps {
 }
 
 function formatCapturedAt(capturedAt: string | null): string {
-  if (!capturedAt) {
-    return 'not yet captured'
-  }
-
-  try {
-    return new Date(capturedAt).toLocaleString(undefined, {
-      dateStyle: 'medium',
-      timeStyle: 'short',
-    })
-  } catch {
-    return capturedAt
-  }
+  return capturedAt ? formatDateTime(capturedAt) : 'not yet captured'
 }
 
 export function EvidenceRecordDetail({ record }: EvidenceRecordDetailProps) {
