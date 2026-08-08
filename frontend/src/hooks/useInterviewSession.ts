@@ -1,6 +1,6 @@
 import { useEffect, useMemo, useRef, useState } from 'react'
 import { buildInterviewQueue } from '../lib/buildInterviewQueue'
-import { getCandidateSetupOrDefault, saveEvidenceLog } from '../lib/interviewSession'
+import { getCandidateSetupOrDefault, readEvidenceLog, saveEvidenceLog } from '../lib/interviewSession'
 import type { EvidenceLogEntry, InterviewPhase } from '../types/interview'
 
 const EVALUATING_DELAY_MS = 900
@@ -10,11 +10,22 @@ export function useInterviewSession() {
   const setup = useMemo(() => getCandidateSetupOrDefault(), [])
   const questions = useMemo(() => buildInterviewQueue(setup), [setup])
 
-  const [questionIndex, setQuestionIndex] = useState(0)
-  const [phase, setPhase] = useState<InterviewPhase>('ready')
+  // Resume from whatever this session already captured (e.g. after a refresh
+  // or navigating to Evidence/Results and back), rather than always starting
+  // a fresh in-memory session that would overwrite the persisted evidence log.
+  const resumedEvidence = useMemo(
+    () => readEvidenceLog().filter((entry) => entry.status === 'captured'),
+    [],
+  )
+  const isResumedComplete = questions.length > 0 && resumedEvidence.length >= questions.length
+
+  const [questionIndex, setQuestionIndex] = useState(() =>
+    isResumedComplete ? Math.max(questions.length - 1, 0) : resumedEvidence.length,
+  )
+  const [phase, setPhase] = useState<InterviewPhase>(() => (isResumedComplete ? 'complete' : 'ready'))
   const [response, setResponse] = useState('')
   const [responseError, setResponseError] = useState<string | null>(null)
-  const [evidenceLog, setEvidenceLog] = useState<EvidenceLogEntry[]>([])
+  const [evidenceLog, setEvidenceLog] = useState<EvidenceLogEntry[]>(resumedEvidence)
 
   const evaluatingTimeoutRef = useRef<number | null>(null)
   const adaptingTimeoutRef = useRef<number | null>(null)
