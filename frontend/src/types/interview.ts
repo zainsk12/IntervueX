@@ -48,3 +48,27 @@ export interface CandidateSetupErrors {
   interviewType?: string
   focusAreas?: string
 }
+
+export type InterviewPhase =
+  | 'ready'
+  | 'answering'
+  | 'evaluating'
+  | 'adapting'
+  | 'next-question'
+  | 'complete'
+
+export interface InterviewQuestion {
+  id: string
+  meta: string
+  prompt: string
+  competency: string
+  focusArea: FocusArea
+  evidenceSought: string
+}
+
+export interface EvidenceLogEntry {
+  questionId: string
+  competency: string
+  meta: string
+  status: 'pending' | 'captured'
+}
