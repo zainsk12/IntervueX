@@ -4,9 +4,10 @@ import 'dotenv/config'
  * Centralized environment configuration.
  *
  * Phase 1: only PORT and CORS_ORIGIN are actually used.
- * GROQ_API_KEY / MISTRAL_API_KEY are read (optionally) so later phases can
- * rely on this module without changing its shape — they are NOT required
- * to be set yet, and nothing in Phase 1 depends on them being present.
+ * Phase C (LLM Provider Integration): GROQ_API_KEY / MISTRAL_API_KEY and
+ * their model overrides are now read and used by the provider layer.
+ * Neither key is required to be set for the app to start — an unset key
+ * simply causes that provider to fail fast with a controlled error.
  */
 
 function readEnv(name: string, fallback?: string): string | undefined {
@@ -22,9 +23,11 @@ export const env = {
   port: Number(readEnv('PORT', '4000')),
   corsOrigin: readEnv('CORS_ORIGIN', 'http://localhost:5173') as string,
 
-  // Not used until the LLM Provider Integration phase.
+  // LLM providers — Phase C.
   groqApiKey: readEnv('GROQ_API_KEY'),
   mistralApiKey: readEnv('MISTRAL_API_KEY'),
+  groqModel: readEnv('GROQ_MODEL', 'llama-3.1-8b-instant') as string,
+  mistralModel: readEnv('MISTRAL_MODEL', 'mistral-small-latest') as string,
 }
 
 export type Env = typeof env
