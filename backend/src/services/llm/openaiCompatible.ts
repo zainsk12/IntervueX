@@ -1,3 +1,4 @@
+import { env } from '../../config/env'
 import { LLMProviderError } from './errors'
 
 export interface ChatMessage {
@@ -11,6 +12,12 @@ export interface CallChatCompletionParams {
   apiKey: string | undefined
   model: string
   messages: ChatMessage[]
+  /**
+   * Phase F — bounds how long a real provider call may hang before being
+   * aborted. Optional so existing tests (which resolve their mocked fetch
+   * immediately) are unaffected; defaults to env.llmRequestTimeoutMs.
+   */
+  timeoutMs?: number
 }
 
 /**
@@ -21,11 +28,14 @@ export interface CallChatCompletionParams {
  * safe way. Never logs or returns the API key.
  */
 export async function callChatCompletion(params: CallChatCompletionParams): Promise<string> {
-  const { providerName, endpoint, apiKey, model, messages } = params
+  const { providerName, endpoint, apiKey, model, messages, timeoutMs = env.llmRequestTimeoutMs } = params
 
   if (!apiKey) {
     throw new LLMProviderError(providerName, `${providerName} API key is not configured.`)
   }
+
+  const controller = new AbortController()
+  const timeout = setTimeout(() => controller.abort(), timeoutMs)
 
   let response: Response
   try {
@@ -41,9 +51,15 @@ export async function callChatCompletion(params: CallChatCompletionParams): Prom
         temperature: 0.4,
         response_format: { type: 'json_object' },
       }),
+      signal: controller.signal,
     })
   } catch (err) {
+    if (err instanceof Error && err.name === 'AbortError') {
+      throw new LLMProviderError(providerName, `${providerName} API call timed out after ${timeoutMs}ms.`)
+    }
     throw new LLMProviderError(providerName, `Network error calling ${providerName} API.`, err)
+  } finally {
+    clearTimeout(timeout)
   }
 
   if (!response.ok) {
