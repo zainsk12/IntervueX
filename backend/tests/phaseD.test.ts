@@ -123,7 +123,11 @@ describe('Phase D — interview orchestration / adaptive loop', () => {
     const finalRes = await request(app).post('/api/interview').send({ sessionId, message: 'final answer' })
 
     expect(finalRes.body.readyToConclude).toBe(true)
-    expect(finalRes.body.done).toBe(false) // Phase E owns real completion + feedback
+    // Phase E: once the backend-owned threshold is met, this turn's response
+    // is the real completion — done: true with a populated feedback object.
+    expect(finalRes.body.done).toBe(true)
+    expect(finalRes.body).toHaveProperty('feedback')
+    expect(typeof finalRes.body.feedback.summary).toBe('string')
 
     session = getSession(sessionId)
     expect(session?.questionsAsked).toBe(8)

@@ -57,3 +57,56 @@ export function buildInterviewPrompt(context: InterviewContext): { system: strin
 
   return { system, user }
 }
+
+/**
+ * Builds the system/user prompt pair for the final assessment (Phase E —
+ * Completion + Feedback). Reuses the same InterviewContext shape as
+ * buildInterviewPrompt above: the transcript, candidate, candidateModel,
+ * and days-covered snapshot already contain everything needed to write a
+ * session-specific assessment, with no separate context-gathering path.
+ */
+export function buildFeedbackPrompt(context: InterviewContext): { system: string; user: string } {
+  const system = [
+    'You are IntervueX, an adaptive technical interviewer. The interview has just concluded and you are now',
+    'writing the final assessment for the candidate. Do not ask any further questions.',
+    'Base the assessment ONLY on the transcript, evidence notes, and candidate model provided below — never invent',
+    "skills, answers, or events that did not occur in this session, and never rely on the candidate's stated",
+    'profile alone as evidence of ability.',
+    'Do not include chain-of-thought, internal reasoning, provider diagnostics, or any hidden evaluation text —',
+    'only content appropriate to show the candidate.',
+    'Respond with ONLY a single JSON object — no prose, no markdown code fences — matching exactly this shape:',
+    '{"reply": string, "feedback": {"summary": string, "strengths": string[], "gaps": string[], "next": string[]}}',
+    '- reply: a short, natural closing message to the candidate — thank them and let them know the interview is complete.',
+    "- feedback.summary: a concise, honest summary of the candidate's actual demonstrated performance this session.",
+    '- feedback.strengths: concrete strengths actually demonstrated, tied to specific topics/days where possible.',
+    '- feedback.gaps: real weaknesses, uncertainties, or areas insufficiently demonstrated — not generic filler.',
+    '- feedback.next: concrete next steps directly tied to the gaps identified above.',
+    'Arrays may be short, but every entry must be specific to this candidate and this session — never boilerplate.',
+  ].join('\n')
+
+  const historyText = context.conversationHistory.length
+    ? context.conversationHistory.map((turn) => `${turn.role}: ${turn.content}`).join('\n')
+    : '(no conversation recorded)'
+
+  const completedText = context.completedDays?.length ? context.completedDays.join(', ') : 'none on record'
+  const skippedText = context.skippedDays?.length ? context.skippedDays.join(', ') : 'none on record'
+
+  const candidateModelText =
+    context.candidateModel && Object.keys(context.candidateModel).length > 0
+      ? JSON.stringify(context.candidateModel)
+      : '(no evidence recorded)'
+
+  const user = [
+    `Candidate profile: ${JSON.stringify(context.candidate)}`,
+    `Curriculum days candidate completed/passed (prior record): ${completedText}`,
+    `Curriculum days candidate skipped (prior record): ${skippedText}`,
+    `Total questions asked in this interview: ${context.questionsAsked}`,
+    `Curriculum days covered during this interview: ${context.daysCovered.join(', ') || 'none'}`,
+    `Accumulated evidence / candidate model gathered during this session: ${candidateModelText}`,
+    'Full conversation transcript for this session:',
+    historyText,
+    'Produce the final assessment as the JSON object described in the system prompt.',
+  ].join('\n\n')
+
+  return { system, user }
+}

@@ -111,7 +111,15 @@ describe('Phase C — MistralProvider', () => {
 
 describe('Phase C — llmService (Groq → Mistral fallback)', () => {
   function fakeProvider(name: string, impl: (ctx: InterviewContext) => Promise<InterviewTurn>): LLMProvider {
-    return { name, generateInterviewTurn: impl }
+    return {
+      name,
+      generateInterviewTurn: impl,
+      // Not exercised by these Phase C tests (see llm.test.ts Phase E block
+      // below) — present only so this fake satisfies the LLMProvider type.
+      generateFeedback: async () => {
+        throw new Error('not implemented in this fake')
+      },
+    }
   }
 
   const sampleTurn: InterviewTurn = {

@@ -19,9 +19,10 @@ const router = Router()
  *   Subsequent request: { sessionId, message }
  *   Response:            { reply, done } | { reply, done: true, feedback }
  *
- * `done` stays false through Phase D (feedback generation is Phase E);
- * `readyToConclude` is included as an additional, non-breaking field so
- * the backend-computed completion state is visible once thresholds are met.
+ * `done` becomes true, together with a populated `feedback` object, exactly
+ * once interviewService's backend-owned completion rule is met (Phase E).
+ * `readyToConclude` is included as an additional, non-breaking field so the
+ * completion-ready state is visible alongside `done`.
  */
 router.post('/', async (req: Request, res: Response) => {
   const body = req.body
@@ -74,7 +75,15 @@ router.post('/', async (req: Request, res: Response) => {
 
   try {
     const result = await handleTurn(session, message as string)
-    return res.status(200).json({ reply: result.reply, done: result.done, readyToConclude: result.readyToConclude })
+    const responseBody: { reply: string; done: boolean; readyToConclude: boolean; feedback?: typeof result.feedback } = {
+      reply: result.reply,
+      done: result.done,
+      readyToConclude: result.readyToConclude,
+    }
+    if (result.feedback) {
+      responseBody.feedback = result.feedback
+    }
+    return res.status(200).json(responseBody)
   } catch {
     return res.status(500).json({ error: 'Failed to process interview turn.' })
   }

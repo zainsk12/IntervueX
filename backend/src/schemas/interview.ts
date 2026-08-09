@@ -1,23 +1,25 @@
+import type { InterviewFeedback } from '../types/llm'
 import type { InterviewSession } from '../types/session'
 
 /**
- * Phase D — stable, route-facing response contract for a single interview
- * turn. This is deliberately separate from the LLM turn contract
- * (types/llm.ts InterviewTurn + services/llm/validate.ts), which validates
- * what a *provider* returned. This type describes what interviewService
- * hands back to the route, after the LLM turn has already been validated
- * and applied to the session.
+ * Stable, route-facing response contract for a single interview turn.
+ * This is deliberately separate from the LLM turn contracts
+ * (types/llm.ts InterviewTurn/FeedbackTurn + services/llm/validate.ts),
+ * which validate what a *provider* returned. This type describes what
+ * interviewService hands back to the route, after the LLM turn (or final
+ * feedback) has already been validated and applied to the session.
  *
- * `done` intentionally stays `false` through Phase D: the technical-spec
- * contract only allows `done: true` together with a `feedback` object, and
- * Phase E (not yet implemented) owns feedback generation. `readyToConclude`
- * is exposed alongside it so the completion-ready state is visible to
- * callers/tests without violating that contract prematurely.
+ * `done` stays `false` on every ordinary turn. It becomes `true`, together
+ * with a populated `feedback` object, exactly once the backend-owned
+ * completion rule (computeReadyToConclude below) is met — matching the
+ * official API contract (docs/technical-spec.md) exactly. `readyToConclude`
+ * is kept alongside as an additional, non-breaking field.
  */
 export interface InterviewServiceResult {
   reply: string
   done: boolean
   readyToConclude: boolean
+  feedback?: InterviewFeedback
 }
 
 /**

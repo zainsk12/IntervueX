@@ -1,4 +1,4 @@
-import type { InterviewContext, InterviewTurn, LLMProvider } from '../types/llm'
+import type { FeedbackTurn, InterviewContext, InterviewTurn, LLMProvider } from '../types/llm'
 import { GroqProvider } from './llm/groqProvider'
 import { MistralProvider } from './llm/mistralProvider'
 
@@ -46,7 +46,30 @@ export function createLlmService(providers: LLMProvider[]) {
     throw new AllProvidersFailedError(attempts)
   }
 
-  return { generateInterviewTurn }
+  /**
+   * Phase E — same ordered-fallback pattern as generateInterviewTurn, but
+   * for the final closing reply + structured feedback. Kept as a sibling
+   * function (not a generic helper) so the existing generateInterviewTurn
+   * control flow is untouched.
+   */
+  async function generateFeedback(context: InterviewContext): Promise<FeedbackTurn> {
+    const attempts: ProviderAttempt[] = []
+
+    for (const provider of providers) {
+      try {
+        return await provider.generateFeedback(context)
+      } catch (err) {
+        const message = err instanceof Error ? err.message : String(err)
+        attempts.push({ provider: provider.name, error: message })
+        // eslint-disable-next-line no-console
+        console.error(`[llmService] provider "${provider.name}" failed to generate feedback: ${message}`)
+      }
+    }
+
+    throw new AllProvidersFailedError(attempts)
+  }
+
+  return { generateInterviewTurn, generateFeedback }
 }
 
 /**

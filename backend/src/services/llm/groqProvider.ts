@@ -1,9 +1,9 @@
 import { env } from '../../config/env'
-import type { InterviewContext, InterviewTurn, LLMProvider } from '../../types/llm'
+import type { FeedbackTurn, InterviewContext, InterviewTurn, LLMProvider } from '../../types/llm'
 import { LLMProviderError } from './errors'
 import { callChatCompletion } from './openaiCompatible'
-import { buildInterviewPrompt } from './prompt'
-import { parseInterviewTurn } from './validate'
+import { buildFeedbackPrompt, buildInterviewPrompt } from './prompt'
+import { parseFeedback, parseInterviewTurn } from './validate'
 
 const GROQ_ENDPOINT = 'https://api.groq.com/openai/v1/chat/completions'
 
@@ -50,5 +50,26 @@ export class GroqProvider implements LLMProvider {
       throw new LLMProviderError(this.name, 'Groq response failed structured-output validation.')
     }
     return turn
+  }
+
+  async generateFeedback(context: InterviewContext): Promise<FeedbackTurn> {
+    const { system, user } = buildFeedbackPrompt(context)
+
+    const content = await callChatCompletion({
+      providerName: this.name,
+      endpoint: this.endpoint,
+      apiKey: this.apiKey,
+      model: this.model,
+      messages: [
+        { role: 'system', content: system },
+        { role: 'user', content: user },
+      ],
+    })
+
+    const feedback = parseFeedback(content)
+    if (!feedback) {
+      throw new LLMProviderError(this.name, 'Groq response failed feedback structured-output validation.')
+    }
+    return feedback
   }
 }

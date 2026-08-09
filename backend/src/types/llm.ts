@@ -45,10 +45,40 @@ export interface InterviewTurn {
 }
 
 /**
+ * Final assessment object returned to the client once the interview is
+ * complete (Phase E). Matches the `feedback` shape in the official API
+ * contract (docs/technical-spec.md) exactly.
+ */
+export interface InterviewFeedback {
+  summary: string
+  strengths: string[]
+  gaps: string[]
+  next: string[]
+}
+
+/**
+ * Normalized, validated structured output produced by any LLM provider
+ * when asked to generate the final assessment (Phase E). `reply` is the
+ * natural closing message shown to the candidate; `feedback` is the
+ * structured assessment object.
+ */
+export interface FeedbackTurn {
+  reply: string
+  feedback: InterviewFeedback
+}
+
+/**
  * Provider-agnostic abstraction. Interview/orchestration code must depend
  * only on this interface (via llmService), never on a concrete provider.
  */
 export interface LLMProvider {
   readonly name: string
   generateInterviewTurn(context: InterviewContext): Promise<InterviewTurn>
+  /**
+   * Generates the final closing reply + structured feedback for a
+   * completed interview session (Phase E). Reuses the same InterviewContext
+   * shape as generateInterviewTurn — it already carries everything needed
+   * (transcript, candidate, candidateModel, days covered).
+   */
+  generateFeedback(context: InterviewContext): Promise<FeedbackTurn>
 }

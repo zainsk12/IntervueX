@@ -1,4 +1,5 @@
 import type { CandidateRecord } from './candidate'
+import type { FeedbackTurn } from './llm'
 
 export type ConversationRole = 'interviewer' | 'candidate'
 
@@ -44,4 +45,11 @@ export interface InterviewSession {
   status: SessionStatus
   createdAt: string
   updatedAt: string
+  /**
+   * Final closing reply + structured feedback (Phase E), generated once —
+   * the first time this session reaches `status: 'complete'` — and cached
+   * here so subsequent turns on an already-complete session return the
+   * same result without re-invoking the LLM.
+   */
+  finalFeedback?: FeedbackTurn
 }
