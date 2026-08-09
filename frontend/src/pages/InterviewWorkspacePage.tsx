@@ -10,9 +10,12 @@ import { useInterviewSession } from '../hooks/useInterviewSession'
 export default function InterviewWorkspacePage() {
   const {
     setup,
-    questions,
+    status,
+    startError,
+    retryStart,
     currentQuestion,
     questionIndex,
+    totalQuestions,
     phase,
     response,
     responseError,
@@ -23,6 +26,41 @@ export default function InterviewWorkspacePage() {
   } = useInterviewSession()
 
   const capturedCount = evidenceLog.filter((entry) => entry.status === 'captured').length
+
+  if (status === 'starting') {
+    return (
+      <section className="mx-auto w-full max-w-2xl px-4 py-14 text-center sm:px-6">
+        <p className="font-mono text-[11px] uppercase tracking-[0.16em] text-accent-secondary">
+          Interview Workspace
+        </p>
+        <h1 className="mt-3 text-2xl font-semibold text-text-primary">Connecting to interviewer…</h1>
+        <p className="mt-3 text-sm leading-relaxed text-text-secondary">
+          Starting your session and generating the first question.
+        </p>
+      </section>
+    )
+  }
+
+  if (status === 'start-error') {
+    return (
+      <section className="mx-auto w-full max-w-2xl px-4 py-14 text-center sm:px-6">
+        <p className="font-mono text-[11px] uppercase tracking-[0.16em] text-error">
+          Interview Workspace
+        </p>
+        <h1 className="mt-3 text-2xl font-semibold text-text-primary">Could not start the interview</h1>
+        <p className="mt-3 text-sm leading-relaxed text-text-secondary">
+          {startError ?? 'Something went wrong reaching the interview service.'}
+        </p>
+        <button
+          className="mt-6 inline-flex items-center gap-2 rounded-md bg-accent-primary px-4 py-2 text-sm font-semibold text-bg-base transition-colors hover:bg-accent-primary-hover"
+          onClick={retryStart}
+          type="button"
+        >
+          Try Again
+        </button>
+      </section>
+    )
+  }
 
   if (!currentQuestion) {
     return (
@@ -51,7 +89,7 @@ export default function InterviewWorkspacePage() {
         phase={phase}
         questionIndex={questionIndex}
         setup={setup}
-        totalQuestions={questions.length}
+        totalQuestions={totalQuestions}
       />
 
       <div className="mx-auto grid w-full max-w-6xl gap-5 px-4 py-6 sm:px-6 lg:grid-cols-[1.6fr_1fr] lg:items-start">
@@ -90,7 +128,7 @@ export default function InterviewWorkspacePage() {
                 phase={phase}
                 question={currentQuestion}
                 questionIndex={questionIndex}
-                totalQuestions={questions.length}
+                totalQuestions={totalQuestions}
               />
               <ResponsePanel
                 error={responseError}

@@ -5,6 +5,8 @@ import type { CandidateSetupPayload } from '../../types/interview'
 interface AssessmentOverviewProps {
   setup: CandidateSetupPayload
   summary: AssessmentSummary
+  /** Backend feedback.summary, once the session has concluded. */
+  feedbackSummary?: string
 }
 
 const STATUS_LABEL: Record<AssessmentSummary['status'], string> = {
@@ -19,7 +21,7 @@ const STATUS_STYLE: Record<AssessmentSummary['status'], string> = {
   complete: 'border-success/50 text-success',
 }
 
-export function AssessmentOverview({ setup, summary }: AssessmentOverviewProps) {
+export function AssessmentOverview({ setup, summary, feedbackSummary }: AssessmentOverviewProps) {
   const typeLabel = INTERVIEW_TYPES.find((type) => type.value === setup.context.interviewType)?.label
   const progress =
     summary.totalQuestions > 0
@@ -64,10 +66,17 @@ export function AssessmentOverview({ setup, summary }: AssessmentOverviewProps) 
       </div>
 
       <p className="mt-4 rounded-md border border-border-subtle bg-bg-inset px-3 py-2.5 text-xs leading-relaxed text-text-tertiary">
-        This overview reflects evidence <span className="text-text-secondary">coverage</span> —
-        which competencies produced captured responses — not a scored evaluation. Response-quality
-        grading is not implemented in this build; treat the sections below as observed evidence for
-        a reviewer to interpret, not a final verdict.
+        {feedbackSummary ? (
+          <>
+            <span className="text-text-secondary">Interviewer summary:</span> {feedbackSummary}
+          </>
+        ) : (
+          <>
+            This overview reflects evidence <span className="text-text-secondary">coverage</span> —
+            which competencies produced captured responses. The interviewer's final,
+            backend-generated summary will appear here once the session concludes.
+          </>
+        )}
       </p>
     </section>
   )
