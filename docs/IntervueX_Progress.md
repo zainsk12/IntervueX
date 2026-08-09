@@ -410,6 +410,10 @@ One optional suggestion was mock loading/network delays. This is not required no
 
 # 14. CURRENT PROJECT STATUS
 
+The project has progressed beyond the original Phase D checkpoint. The backend orchestration,
+real LLM wiring, and frontend integration have been implemented through the current integration
+checkpoint. The latest work also includes production deployment and SPA deep-link handling.
+
 ```text
 Planning                    COMPLETE
 Frontend Implementation     COMPLETE
@@ -423,20 +427,45 @@ Git Baseline                COMPLETE
 Backend Phase A              COMPLETE
 Backend Phase B              COMPLETE
 Backend Phase C              COMPLETE
-Backend Phase D              IN PROGRESS
+Backend Phase D              COMPLETE
+Backend Phase E              COMPLETE
+Backend Phase F              COMPLETE
+Backend Phase G              COMPLETE
+Backend Phase H              IN PROGRESS / FINAL POLISH
 
 Frontend                    FROZEN
 Backend Foundation           COMPLETE
 Data + Session Management    COMPLETE
 LLM Provider Abstraction     COMPLETE
-Interview Orchestration      IN PROGRESS
-Real API Smoke Test          PENDING
-Frontend Integration         PENDING
-End-to-End Integration      PENDING
-Deployment                  PENDING
-Final Demo                  PENDING
-Final Submission            PENDING
+Interview Orchestration      COMPLETE
+Completion + Feedback        COMPLETE
+Real LLM / Provider Wiring  COMPLETE
+Frontend Integration         COMPLETE
+Production Deployment        COMPLETE
+SPA Deep-link Fix            COMPLETE
+Final Demo / Polish          NEXT
+End-to-End Final QA          PENDING
+Final Submission             PENDING
 ```
+
+### Latest verified integration state
+
+- Frontend is deployed on Vercel.
+- Backend is deployed as the `IntervueX` web service on Render.
+- Frontend production API configuration uses:
+  `VITE_API_BASE_URL=https://intervuex-swtx.onrender.com`
+- Render `FRONTEND_URL` is configured as:
+  `https://intervue-x-ten.vercel.app`
+- The frontend successfully reached the deployed backend after the CORS/origin configuration was corrected.
+- The Interview Workspace was successfully opened in production and displayed the live interview state (`Question 1 of 6`, candidate context, evidence chamber, and response area).
+- A production SPA deep-link/reload issue was identified for routes such as `/interview`.
+- A Vercel rewrite configuration was added so client-side routes fall back to `index.html`.
+- The initial `vercel.json` deployment failed because Vercel rejected the file encoding/configuration; the file was then rewritten with UTF-8 encoding and the fix was pushed.
+- The latest source checkpoint visible in the deployment workflow is:
+  `bbc85b5` — `feat: complete Phase G frontend backend integration`
+- The project has therefore moved from backend-only implementation into production integration and final polish/demo preparation.
+
+> **Important:** The earlier progress entries remain historical records. This section is the current-state summary and should be updated again whenever a new phase or deployment checkpoint is verified.
 
 ---
 
@@ -818,43 +847,146 @@ Review changes before committing and avoid committing unrelated files.
 
 # 19. EXACT RESUME POINT
 
-> **Frontend is complete and frozen. Backend Phases A–C are implemented and verified. Phase D — Interview Orchestration / Adaptive Loop — is currently in progress.**
+> **Frontend is complete and frozen. Backend Phases A–G are implemented and integrated with the production frontend. The current work is final polish, production verification, and demo preparation.**
+
+### Latest completed integration work
+
+```text
+Backend foundation + data/session
+        ↓
+LLM provider abstraction
+        ↓
+Interview orchestration / adaptive loop
+        ↓
+Completion + feedback
+        ↓
+Real Groq/Mistral provider wiring
+        ↓
+Frontend ↔ Backend integration
+        ↓
+Render backend deployment
+        ↓
+Vercel frontend deployment
+        ↓
+CORS/origin configuration
+        ↓
+Production interview flow verified
+        ↓
+Vercel SPA deep-link/reload fix
+        ↓
+FINAL POLISH / DEMO PREP
+```
 
 ### Current next action
 
 ```text
-Finish Phase D
+Verify the latest Vercel deployment
     ↓
-Run typecheck
+Test direct navigation/reload for:
+    /
+    /interview/setup
+    /interview
+    /evidence
+    /results
     ↓
-Run complete test suite
+Run production end-to-end interview
     ↓
-Run build
+Verify real LLM response generation
     ↓
-Run tests again after build
+Verify evidence extraction/update
     ↓
-Review modified/new files
+Verify adaptive follow-up behavior
     ↓
-Commit + push Phase D
+Verify completion + results/feedback
     ↓
-Add real Groq/Mistral keys locally
+Review mobile/responsive behavior
     ↓
-Run real provider smoke tests
+Review deployment logs for frontend + backend
     ↓
-Proceed to Phase E — Completion + Feedback
+Commit/push any final fixes
+    ↓
+Final demo preparation
+    ↓
+Final submission
 ```
 
-### Important constraints when resuming
+### Production deployment details
 
-- Frontend is **FROZEN** unless backend integration exposes a real issue.
-- Do not redesign Phases A–C.
+```text
+Frontend:
+https://intervue-x-ten.vercel.app
+
+Backend:
+https://intervuex-swtx.onrender.com
+
+Frontend API environment:
+VITE_API_BASE_URL=https://intervuex-swtx.onrender.com
+
+Backend frontend-origin configuration:
+FRONTEND_URL=https://intervue-x-ten.vercel.app
+```
+
+### Important recent fixes
+
+#### CORS
+
+The production frontend initially failed to call the Render backend because the backend
+was returning an `Access-Control-Allow-Origin` value for the local development origin
+(`http://localhost:5173`) instead of the deployed Vercel origin.
+
+The production `FRONTEND_URL` was corrected so the deployed frontend could communicate
+with the backend.
+
+#### SPA deep links
+
+Directly opening or refreshing a route such as:
+
+```text
+/interview
+```
+
+initially returned:
+
+```text
+404: NOT_FOUND
+```
+
+because Vercel was treating the client-side route as a server-side file path.
+
+A `frontend/vercel.json` rewrite was added:
+
+```json
+{
+  "rewrites": [
+    {
+      "source": "/(.*)",
+      "destination": "/index.html"
+    }
+  ]
+}
+```
+
+The first deployment of this file failed with:
+
+```text
+Invalid vercel.json file provided
+```
+
+The file was then rewritten with the correct UTF-8 encoding and pushed again.
+
+### Current constraints
+
+- Frontend is **FROZEN** unless production integration exposes a genuine issue.
+- Do not redesign the established frontend.
 - Keep `llmService` as the single LLM entry point.
 - Groq remains primary; Mistral remains fallback.
 - Do not introduce Anthropic.
-- Do not use real API keys in automated tests.
+- Do not expose or commit API keys.
+- Automated tests should continue to use mocks where appropriate.
 - Backend owns session state and completion logic.
-- Phase E feedback generation must not be pulled forward into Phase D.
 - Avoid speculative refactoring and unnecessary dependencies.
+- Treat production deployment behavior as part of final QA.
+- Do not declare the project submission-ready until the complete production interview flow is verified.
 
 ### Important Project Files
 
@@ -862,8 +994,12 @@ Proceed to Phase E — Completion + Feedback
 README.md
 PROMPTS.md
 docs/IntervueX_Roadmap.md
+docs/IntervueX_Progress.md
 docs/technical-spec.md
 docs/FRONTEND_DESIGN_SPEC.md
+
+frontend/vercel.json
+frontend/src/lib/interviewApi.ts
 
 backend/src/app.ts
 backend/src/server.ts
@@ -877,20 +1013,13 @@ backend/src/services/llm/mistralProvider.ts
 backend/src/services/llm/prompt.ts
 backend/src/types/llm.ts
 backend/src/types/session.ts
-backend/tests/app.test.ts
-backend/tests/phaseB.test.ts
-backend/tests/llm.test.ts
+backend/src/services/interviewService.ts
 backend/vitest.config.ts
-
-frontend/src/types/interview.ts
-frontend/src/types/results.ts
-frontend/src/lib/interviewSession.ts
-frontend/src/lib/buildInterviewQueue.ts
-frontend/src/lib/resultsAssessment.ts
-frontend/src/App.tsx
-frontend/src/data/routes.ts
 ```
 
-The backend must continue to preserve the core philosophy:
+### Core product philosophy
+
+The backend and frontend integration must continue to preserve the central product story:
 
 > **Don't interview the resume. Interview the evidence.**
+
