@@ -420,12 +420,18 @@ Claude Audit                PASSED
 Gemini Review               PASSED
 Git Baseline                COMPLETE
 
+Backend Phase A              COMPLETE
+Backend Phase B              COMPLETE
+Backend Phase C              COMPLETE
+Backend Phase D              IN PROGRESS
+
 Frontend                    FROZEN
-Backend                     NEXT
-API Integration             PENDING
-AI Interview Engine         PENDING
-Dynamic Candidate Model     PENDING
-Evidence Engine             PENDING
+Backend Foundation           COMPLETE
+Data + Session Management    COMPLETE
+LLM Provider Abstraction     COMPLETE
+Interview Orchestration      IN PROGRESS
+Real API Smoke Test          PENDING
+Frontend Integration         PENDING
 End-to-End Integration      PENDING
 Deployment                  PENDING
 Final Demo                  PENDING
@@ -434,33 +440,423 @@ Final Submission            PENDING
 
 ---
 
-# 15. EXACT RESUME POINT
+# 15. BACKEND IMPLEMENTATION — PHASES A–C
 
-> **Frontend development is complete, audited, documented, validated, committed, pushed, and independently reviewed.**
-
-Do **not** perform another frontend audit unless backend integration reveals a real issue.
-
-### Next Step
+The backend is now being implemented incrementally according to the approved backend plan. The architecture is intentionally backend-owned and provider-abstracted:
 
 ```text
-Read docs/technical-spec.md
-        ↓
-Review frontend types & utilities
-        ↓
-Map API contracts
-        ↓
-Plan backend foundation
-        ↓
-Implement backend incrementally
-        ↓
-Test → Review → Integrate
+HTTP Route
+    ↓
+Interview Service
+    ↓
+Session + Data Services
+    ↓
+LLM Service
+    ↓
+Groq (Primary)
+    ↓ fallback
+Mistral (Secondary)
 ```
 
-The backend must preserve the core philosophy:
+The backend uses **Node.js + TypeScript + Express**, with the existing JSON datasets as the source of candidate/curriculum data and in-memory session storage for the current implementation.
 
-> **Don't interview the resume. Interview the evidence.**
+---
 
-### Important Files Before Resuming
+## Phase A — Backend Foundation
+
+**Status: COMPLETE**
+
+### Implemented
+
+Created the backend foundation under `backend/`:
+
+```text
+backend/
+├── src/
+│   ├── app.ts
+│   ├── server.ts
+│   ├── config/env.ts
+│   └── routes/interview.ts
+├── tests/app.test.ts
+├── package.json
+├── tsconfig.json
+├── .env.example
+└── README.md
+```
+
+### Responsibilities
+
+- Express application setup
+- CORS
+- JSON parsing
+- Environment configuration
+- `GET /health`
+- `POST /api/interview` contract-shaped placeholder
+- 404 handling
+- malformed JSON/error handling
+- TypeScript/Vitest test setup
+
+### Validation
+
+```text
+TypeScript compilation       PASS
+Phase A tests                8/8 PASS
+/health                      PASS
+/api/interview validation   PASS
+Malformed JSON handling      PASS
+Build                        PASS
+```
+
+A TypeScript 7/module-resolution compatibility issue was resolved with the appropriate bundler configuration.
+
+---
+
+## Phase B — Data + Session Management
+
+**Status: COMPLETE**
+
+### Created
+
+```text
+backend/src/types/candidate.ts
+backend/src/types/curriculum.ts
+backend/src/types/session.ts
+backend/src/services/dataService.ts
+backend/src/services/sessionService.ts
+backend/tests/phaseB.test.ts
+```
+
+### Implemented
+
+- Loads `data/curriculum.json` and `data/candidates.json` into memory at startup.
+- Candidate lookup by ID/member ID.
+- Curriculum day/module lookup.
+- Candidate/curriculum listing helpers.
+- In-memory `Map<sessionId, InterviewSession>`.
+- Session creation and retrieval.
+- Conversation history persistence.
+- Questions-asked tracking.
+- Days-covered tracking.
+- Candidate model storage.
+- Session status.
+- Helper mutators reserved for later orchestration.
+
+The existing `POST /api/interview` route was updated to use the Phase B data/session services while preserving Phase A validation behavior.
+
+### Validation
+
+```text
+Phase A + Phase B tests     16/16 PASS
+TypeScript                  PASS
+Build                       PASS
+Live API smoke verification PASS
+```
+
+---
+
+## Phase C — LLM Provider Integration
+
+**Status: COMPLETE**
+
+### Created
+
+```text
+backend/src/types/llm.ts
+backend/src/services/llm/errors.ts
+backend/src/services/llm/openaiCompatible.ts
+backend/src/services/llm/validate.ts
+backend/src/services/llm/prompt.ts
+backend/src/services/llm/groqProvider.ts
+backend/src/services/llm/mistralProvider.ts
+backend/src/services/llm/llmService.ts
+backend/tests/llm.test.ts
+```
+
+### Architecture
+
+```text
+Interview Service
+      ↓
+   llmService
+      ↓
+  ┌───────────┐
+  │   Groq    │ ← primary
+  └─────┬─────┘
+        │ failure
+        ↓
+  ┌───────────┐
+  │  Mistral  │ ← fallback
+  └───────────┘
+```
+
+### Important decisions
+
+- No Anthropic SDK.
+- No direct provider calls from routes.
+- Groq is the primary provider.
+- Mistral is the fallback provider.
+- `llmService` is the single LLM entry point.
+- Providers use OpenAI-compatible chat-completions HTTP calls.
+- Provider output is validated into the structured `InterviewTurn`.
+- Tests mock provider/fetch behavior; real API keys are not required for automated tests.
+- Real API smoke testing is deliberately deferred until after the orchestration layer is complete.
+
+### Configuration
+
+`backend/src/config/env.ts` contains provider/model configuration, and `.env.example` contains placeholders for provider model variables.
+
+Real API keys must remain local in `backend/.env` and must never be committed to Git.
+
+### Validation
+
+```text
+TypeScript                     PASS
+Phase A + B + C tests          26/26 PASS
+Build                          PASS
+Anthropic dependency check     PASS — none present
+New npm dependency check       PASS — none required
+```
+
+### Vitest hygiene fix
+
+After the build, Vitest initially discovered stale compiled test files under `dist/tests/`. This was a test-discovery/build-artifact issue rather than a Phase C application failure.
+
+Permanent fix:
+
+```text
+backend/vitest.config.ts
+```
+
+with `dist/**` excluded from Vitest discovery.
+
+Final verification after the fix:
+
+```text
+Typecheck                     PASS
+Tests before build            26/26 PASS
+Build                         PASS
+Tests after build             26/26 PASS
+dist/tests/** discovered      NO
+```
+
+---
+
+# 16. PHASE D — INTERVIEW ORCHESTRATION / ADAPTIVE LOOP
+
+**Status: IN PROGRESS**
+
+Phase D is the current implementation phase.
+
+### Objective
+
+Implement the backend-owned interview orchestration loop:
+
+```text
+User Answer
+    ↓
+Interview Service
+    ↓
+Build Interview Context
+    ↓
+llmService
+    ↓
+Structured InterviewTurn
+    ↓
+Evidence / Candidate Model Update
+    ↓
+Question + Conversation State
+    ↓
+Adaptive Next Turn
+```
+
+### Core requirements
+
+Phase D must implement:
+
+- `interviewService.handleTurn(sessionId, message?)`
+- Interview prompt/context construction
+- Candidate + curriculum context
+- Conversation history context
+- Candidate model context
+- Adaptive questioning
+- Evidence extraction/update
+- `questionsAsked` tracking
+- `daysCovered` tracking
+- Backend-owned completion readiness
+- Structured LLM response validation
+- Safe fallback on malformed LLM output
+- Session persistence
+- Route integration through the existing architecture
+
+### Backend completion rule
+
+The backend — not the LLM — determines when the interview is ready to conclude:
+
+```text
+readyToConclude =
+    questionsAsked >= 8
+    &&
+    daysCovered.size >= 4
+```
+
+Until this condition is satisfied, the interview continues.
+
+Phase D does **not** implement final feedback generation. That belongs to Phase E.
+
+### Adaptive behavior
+
+Later questions should visibly use evidence from earlier answers.
+
+The implementation should support:
+
+- clarifying weak/short answers
+- deeper follow-ups for strong answers
+- avoiding unnecessary repetition
+- referencing earlier answers
+- using curriculum/candidate context
+- updating lightweight evidence/signals
+
+The LLM provides evidence/signals; the backend owns state and completion.
+
+### Phase D testing
+
+The Phase D tests must verify:
+
+- new session handling
+- existing session continuation
+- user-message persistence
+- assistant-response persistence
+- `questionsAsked` increment
+- `daysCovered` update
+- candidate-model/evidence update
+- previous conversation included in later context
+- deterministic completion readiness
+- no early completion
+- completion readiness after both thresholds
+- malformed LLM output handling
+- provider failure handling
+- all existing Phase A/B/C tests remain passing
+
+Real Groq/Mistral calls are **not** required for automated Phase D tests.
+
+---
+
+# 17. API KEY / REAL PROVIDER PLAN
+
+**Status: PENDING — intentionally deferred**
+
+Real Groq and Mistral API keys are **not required during Phase D implementation/testing**.
+
+Existing Groq and Mistral keys previously used for another project can be reused for IntervueX if desired; generating new keys is not inherently necessary.
+
+Planned sequence:
+
+```text
+Phase D implementation
+        ↓
+Phase D tests/build PASS
+        ↓
+Commit Phase D
+        ↓
+Add real keys to local backend/.env
+        ↓
+Real Groq smoke test
+        ↓
+Real Mistral fallback smoke test
+        ↓
+Continue integration
+```
+
+Rules:
+
+- Never hardcode API keys.
+- Never commit `.env`.
+- Never paste API keys into chat.
+- Automated tests should continue using mocks.
+- Real API smoke testing should be a controlled separate step.
+
+---
+
+# 18. GIT CHECKPOINTS
+
+Completed frontend checkpoint:
+
+```text
+70c1357
+Complete frontend implementation and final QA
+```
+
+Backend checkpoint policy:
+
+```text
+Phase A complete
+      ↓
+Phase B complete
+      ↓
+Phase C complete
+      ↓
+Phase D complete
+      ↓
+Commit/push checkpoint
+```
+
+The current working tree should be committed at the end of Phase D after local verification.
+
+Recommended commands:
+
+```bash
+git status
+git diff
+git add backend
+git commit -m "Complete backend phases A-D"
+git push origin main
+```
+
+Review changes before committing and avoid committing unrelated files.
+
+---
+
+# 19. EXACT RESUME POINT
+
+> **Frontend is complete and frozen. Backend Phases A–C are implemented and verified. Phase D — Interview Orchestration / Adaptive Loop — is currently in progress.**
+
+### Current next action
+
+```text
+Finish Phase D
+    ↓
+Run typecheck
+    ↓
+Run complete test suite
+    ↓
+Run build
+    ↓
+Run tests again after build
+    ↓
+Review modified/new files
+    ↓
+Commit + push Phase D
+    ↓
+Add real Groq/Mistral keys locally
+    ↓
+Run real provider smoke tests
+    ↓
+Proceed to Phase E — Completion + Feedback
+```
+
+### Important constraints when resuming
+
+- Frontend is **FROZEN** unless backend integration exposes a real issue.
+- Do not redesign Phases A–C.
+- Keep `llmService` as the single LLM entry point.
+- Groq remains primary; Mistral remains fallback.
+- Do not introduce Anthropic.
+- Do not use real API keys in automated tests.
+- Backend owns session state and completion logic.
+- Phase E feedback generation must not be pulled forward into Phase D.
+- Avoid speculative refactoring and unnecessary dependencies.
+
+### Important Project Files
 
 ```text
 README.md
@@ -468,6 +864,23 @@ PROMPTS.md
 docs/IntervueX_Roadmap.md
 docs/technical-spec.md
 docs/FRONTEND_DESIGN_SPEC.md
+
+backend/src/app.ts
+backend/src/server.ts
+backend/src/config/env.ts
+backend/src/routes/interview.ts
+backend/src/services/dataService.ts
+backend/src/services/sessionService.ts
+backend/src/services/llm/llmService.ts
+backend/src/services/llm/groqProvider.ts
+backend/src/services/llm/mistralProvider.ts
+backend/src/services/llm/prompt.ts
+backend/src/types/llm.ts
+backend/src/types/session.ts
+backend/tests/app.test.ts
+backend/tests/phaseB.test.ts
+backend/tests/llm.test.ts
+backend/vitest.config.ts
 
 frontend/src/types/interview.ts
 frontend/src/types/results.ts
@@ -477,3 +890,7 @@ frontend/src/lib/resultsAssessment.ts
 frontend/src/App.tsx
 frontend/src/data/routes.ts
 ```
+
+The backend must continue to preserve the core philosophy:
+
+> **Don't interview the resume. Interview the evidence.**

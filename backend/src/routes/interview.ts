@@ -1,5 +1,6 @@
 import { Router, Request, Response } from 'express'
-import { appendCandidateTurn, appendInterviewerTurn, createSession, getSession } from '../services/sessionService'
+import { handleTurn, startInterview } from '../services/interviewService'
+import { getSession } from '../services/sessionService'
 import type { CandidateInput } from '../types/session'
 
 const router = Router()
@@ -7,18 +8,22 @@ const router = Router()
 /**
  * POST /api/interview
  *
- * Phase B (Data + Session Management): request validation is unchanged
- * from Phase A. This now creates/retrieves real in-memory sessions and
- * persists conversation history across requests. Replies are still
- * placeholders — no LLM calls, no real question generation, no adaptive
- * logic (that is Phase C/D).
+ * Phase D (Interview Orchestration / Adaptive Loop): request validation is
+ * unchanged from Phase A. Session load/create and all interview
+ * orchestration (context building, LLM turn generation, evidence/state
+ * updates, backend-owned completion readiness) now live in
+ * interviewService — this route stays a thin validation + dispatch layer.
  *
  * Official contract (docs/technical-spec.md):
  *   First request:      { sessionId, candidate }
  *   Subsequent request: { sessionId, message }
  *   Response:            { reply, done } | { reply, done: true, feedback }
+ *
+ * `done` stays false through Phase D (feedback generation is Phase E);
+ * `readyToConclude` is included as an additional, non-breaking field so
+ * the backend-computed completion state is visible once thresholds are met.
  */
-router.post('/', (req: Request, res: Response) => {
+router.post('/', async (req: Request, res: Response) => {
   const body = req.body
 
   if (!body || typeof body !== 'object' || Array.isArray(body)) {
@@ -55,16 +60,8 @@ router.post('/', (req: Request, res: Response) => {
   if (isStartRequest) {
     // Creates the session if sessionId is new; returns the existing one
     // unchanged if a session for this sessionId already exists.
-    const session = createSession(sessionId, candidate as CandidateInput)
-
-    const reply =
-      "Welcome. Let's begin your interview. (Phase 2 placeholder response — interview logic not yet implemented.)"
-    appendInterviewerTurn(session, reply)
-
-    return res.status(200).json({
-      reply,
-      done: false,
-    })
+    const result = startInterview(sessionId, candidate as CandidateInput)
+    return res.status(200).json({ reply: result.reply, done: result.done, readyToConclude: result.readyToConclude })
   }
 
   // Turn request — the sessionId MUST already exist.
@@ -75,15 +72,12 @@ router.post('/', (req: Request, res: Response) => {
     })
   }
 
-  appendCandidateTurn(session, message as string)
-
-  const reply = 'Thanks for your response. (Phase 2 placeholder response — interview logic not yet implemented.)'
-  appendInterviewerTurn(session, reply)
-
-  return res.status(200).json({
-    reply,
-    done: false,
-  })
+  try {
+    const result = await handleTurn(session, message as string)
+    return res.status(200).json({ reply: result.reply, done: result.done, readyToConclude: result.readyToConclude })
+  } catch {
+    return res.status(500).json({ error: 'Failed to process interview turn.' })
+  }
 })
 
 export default router

@@ -19,6 +19,16 @@ export interface InterviewContext {
   daysCovered: number[]
   /** Optional curriculum day the next question should be anchored to. */
   curriculumDay?: CurriculumDay
+  /**
+   * Lightweight, backend-owned snapshot of what the interview has learned
+   * about the candidate so far (Phase D). Optional so existing Phase C
+   * callers/tests that only build the original fields keep compiling.
+   */
+  candidateModel?: Record<string, unknown>
+  /** Curriculum days the candidate's own record marks as completed/passed. */
+  completedDays?: number[]
+  /** Curriculum days the candidate's own record marks as skipped. */
+  skippedDays?: number[]
 }
 
 export type InterviewSignal = 'strong' | 'moderate' | 'weak' | 'insufficient'
